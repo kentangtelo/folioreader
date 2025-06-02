@@ -71,6 +71,7 @@ public class HomeActivity extends AppCompatActivity
                     config = new Config();
                 config.setAllowedDirection(Config.AllowedDirection.VERTICAL_AND_HORIZONTAL);
 
+
                 folioReader.setConfig(config, true)
                         .openBook(R.raw.four);
             }
@@ -92,7 +93,7 @@ public class HomeActivity extends AppCompatActivity
 
                 folioReader.setReadLocator(readLocator);
                 folioReader.setConfig(config, true)
-                        .openBook("file:///android_asset/john.epub");
+                        .openBook("file:///android_asset/mark_manson_arab.epub");
             }
         });
 

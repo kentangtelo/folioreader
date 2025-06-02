@@ -125,7 +125,9 @@ class FolioWebView : WebView {
     fun getDirection(): String {
         return folioActivityCallback.direction.toString()
     }
-
+    fun getHorizontalPageCount(): Int {
+        return this.horizontalPageCount
+    }
     @JavascriptInterface
     fun getTopDistraction(unitString: String): Int {
         val unit = DisplayUnit.valueOf(unitString)
@@ -155,6 +157,10 @@ class FolioWebView : WebView {
     @JavascriptInterface
     fun isPopupShowing(): Boolean {
         return popupWindow.isShowing
+    }
+
+    fun updateHorizontalPage(pageIndex: Int){
+        parentFragment.updateHorizontalPageProgress(pageIndex)
     }
 
     private inner class HorizontalGestureListener : GestureDetector.SimpleOnGestureListener() {

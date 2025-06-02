@@ -1,11 +1,10 @@
 package com.folioreader.ui.view
 
-//import kotlinx.android.synthetic.main.view_config.*
 import android.animation.Animator
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,28 +12,41 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.SeekBar
+import android.widget.Spinner
+import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.folioreader.Config
 import com.folioreader.R
-import com.folioreader.databinding.ViewConfigBinding
 import com.folioreader.model.event.ReloadDataEvent
 import com.folioreader.ui.activity.FolioActivity
 import com.folioreader.ui.activity.FolioActivityCallback
-import com.folioreader.ui.adapter.FontAdapter
+import com.folioreader.ui.adapter.FontArabicAdapter
+import com.folioreader.ui.adapter.FontLatinAdapter
 import com.folioreader.ui.fragment.MediaControllerFragment
 import com.folioreader.util.AppUtil
+import com.folioreader.util.StyleableTextView
 import com.folioreader.util.UiUtil
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import org.greenrobot.eventbus.EventBus
+import java.util.Timer
+import java.util.TimerTask
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
+/**
+ * Created by mobisys2 on 11/16/2016.
+ */
 class ConfigBottomSheetDialogFragment : BottomSheetDialogFragment() {
 
     companion object {
-        const val FADE_DAY_NIGHT_MODE = 500
+        const val FADE_DAY_NIGHT_MODE = 10
 
         @JvmField
         val LOG_TAG: String = ConfigBottomSheetDialogFragment::class.java.simpleName
@@ -43,30 +55,44 @@ class ConfigBottomSheetDialogFragment : BottomSheetDialogFragment() {
     private lateinit var config: Config
     private var isNightMode = false
     private lateinit var activityCallback: FolioActivityCallback
-    private lateinit var viewConfigBinding: ViewConfigBinding
+
+    // View references
+    private lateinit var container: ConstraintLayout
+    private lateinit var viewConfigFontSize: TextView
+    private lateinit var viewConfigFontSizeBtnIncrease: ImageButton
+    private lateinit var viewConfigFontSizeBtnDecrease: ImageButton
+    private lateinit var viewConfigFontTypeLatin: View
+    private lateinit var viewConfigIbDayMode: ImageButton
+    private lateinit var viewConfigIbNightMode: ImageButton
+    private lateinit var buttonVertical: StyleableTextView
+    private lateinit var buttonHorizontal: StyleableTextView
+    private lateinit var viewConfigFontLatinSpinner: Spinner
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        viewConfigBinding = ViewConfigBinding.inflate(inflater)
-        return viewConfigBinding.root
+    ): View? {
+        return inflater.inflate(R.layout.view_config, container)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Initialize view references
+        container = view.findViewById(R.id.container)
+        viewConfigFontSize = view.findViewById(R.id.view_config_fontSize)
+        viewConfigFontSizeBtnIncrease = view.findViewById(R.id.view_config_font_size_btn_increase)
+        viewConfigFontSizeBtnDecrease = view.findViewById(R.id.view_config_font_size_btn_decrease)
+        viewConfigFontTypeLatin = view.findViewById(R.id.view_config_font_type_latin)
+        viewConfigIbDayMode = view.findViewById(R.id.view_config_ib_day_mode)
+        viewConfigIbNightMode = view.findViewById(R.id.view_config_ib_night_mode)
+        buttonVertical = view.findViewById(R.id.buttonVertical)
+        buttonHorizontal = view.findViewById(R.id.buttonHorizontal)
+        viewConfigFontLatinSpinner = view.findViewById(R.id.view_config_font_latin_spinner)
+
         if (activity is FolioActivity)
             activityCallback = activity as FolioActivity
-
-        view.viewTreeObserver.addOnGlobalLayoutListener {
-            val dialog = dialog as BottomSheetDialog
-            val bottomSheet =
-                dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet) as FrameLayout?
-            val behavior = BottomSheetBehavior.from(bottomSheet!!)
-            behavior.state = BottomSheetBehavior.STATE_EXPANDED
-            behavior.peekHeight = 0
-        }
 
         config = AppUtil.getSavedConfig(activity)!!
         initViews()
@@ -79,150 +105,154 @@ class ConfigBottomSheetDialogFragment : BottomSheetDialogFragment() {
 
     private fun initViews() {
         inflateView()
-        configFonts()
+        configLatinFonts()
+        viewConfigFontSize.text = config.fontSize.toString()
+        configFontSizeButtons()
+        selectFontLatin(config.fontLatin)
 
-        viewConfigBinding.viewConfigFontSizeSeekBar.progress = config.fontSize
-        configSeekBar()
-        selectFont(config.font, false)
         isNightMode = config.isNightMode
         if (isNightMode) {
-            viewConfigBinding.container.setBackgroundColor(ContextCompat.getColor(context!!, R.color.night))
+            container.setBackgroundColor(ContextCompat.getColor(context!!, R.color.night))
+            viewConfigFontSize.setTextColor(ContextCompat.getColor(context!!, R.color.lightText))
+
+            viewConfigFontSizeBtnIncrease.background = ContextCompat.getDrawable(context!!, R.drawable.buttons_night_rounded_corner_background)
+            viewConfigFontSizeBtnDecrease.background = ContextCompat.getDrawable(context!!, R.drawable.buttons_night_rounded_corner_background)
+
+            UiUtil.setColorResToDrawable(R.color.lightText, viewConfigFontSizeBtnIncrease.drawable)
+            UiUtil.setColorResToDrawable(R.color.lightText, viewConfigFontSizeBtnDecrease.drawable)
+
+            viewConfigFontTypeLatin.background = ContextCompat.getDrawable(context!!, R.drawable.buttons_night_rounded_corner_background)
         } else {
-            viewConfigBinding.container.setBackgroundColor(ContextCompat.getColor(context!!, R.color.white))
+            container.setBackgroundColor(ContextCompat.getColor(context!!, R.color.white))
+            viewConfigFontSize.setTextColor(ContextCompat.getColor(context!!, R.color.night))
+
+            viewConfigFontSizeBtnIncrease.background = ContextCompat.getDrawable(context!!, R.drawable.buttons_day_rounded_corner_background)
+            viewConfigFontSizeBtnDecrease.background = ContextCompat.getDrawable(context!!, R.drawable.buttons_day_rounded_corner_background)
+
+            UiUtil.setColorResToDrawable(R.color.night, viewConfigFontSizeBtnIncrease.drawable)
+            UiUtil.setColorResToDrawable(R.color.night, viewConfigFontSizeBtnDecrease.drawable)
+
+            viewConfigFontTypeLatin.background = ContextCompat.getDrawable(context!!, R.drawable.buttons_day_rounded_corner_background)
         }
 
         if (isNightMode) {
+            viewConfigIbDayMode.isSelected = false
+            viewConfigIbNightMode.isSelected = true
 
-
-            viewConfigBinding.viewConfigIbDayMode.isSelected = false
-            viewConfigBinding.viewConfigIbNightMode.isSelected = true
-            UiUtil.setColorIntToDrawable(
-                config.currentThemeColor,
-                viewConfigBinding.viewConfigIbNightMode.drawable
-            )
-            UiUtil.setColorResToDrawable(R.color.app_gray, viewConfigBinding.viewConfigIbDayMode.drawable)
         } else {
-            viewConfigBinding.viewConfigIbDayMode.isSelected = true
-            viewConfigBinding.viewConfigIbNightMode.isSelected = false
-            UiUtil.setColorIntToDrawable(
-                config.currentThemeColor,
-                viewConfigBinding.viewConfigIbDayMode.drawable
-            )
-            UiUtil.setColorResToDrawable(R.color.app_gray, viewConfigBinding.viewConfigIbNightMode.drawable)
+            viewConfigIbDayMode.isSelected = true
+            viewConfigIbNightMode.isSelected = false
         }
     }
 
+    @SuppressLint("ResourceAsColor")
     private fun inflateView() {
 
         if (config.allowedDirection != Config.AllowedDirection.VERTICAL_AND_HORIZONTAL) {
-            viewConfigBinding.view5.visibility = View.GONE
-            viewConfigBinding.buttonVertical.visibility = View.GONE
-            viewConfigBinding.buttonHorizontal.visibility = View.GONE
+            buttonVertical.visibility = View.GONE
+            buttonHorizontal.visibility = View.GONE
         }
 
-        viewConfigBinding.viewConfigIbDayMode.setOnClickListener {
+        viewConfigIbDayMode.setOnClickListener {
             isNightMode = true
             toggleBlackTheme()
-            viewConfigBinding.viewConfigIbDayMode.isSelected = true
-            viewConfigBinding.viewConfigIbNightMode.isSelected = false
+            viewConfigIbDayMode.isSelected = true
+            viewConfigIbNightMode.isSelected = false
             setToolBarColor()
             setAudioPlayerBackground()
-            UiUtil.setColorResToDrawable(R.color.app_gray, viewConfigBinding.viewConfigIbNightMode.drawable)
-            UiUtil.setColorIntToDrawable(config.currentThemeColor, viewConfigBinding.viewConfigIbDayMode.drawable)
+
             dialog?.hide()
         }
 
-        viewConfigBinding.viewConfigIbNightMode.setOnClickListener {
+        viewConfigIbNightMode.setOnClickListener {
             isNightMode = false
             toggleBlackTheme()
-            viewConfigBinding.viewConfigIbDayMode.isSelected = false
-            viewConfigBinding.viewConfigIbNightMode.isSelected = true
-            UiUtil.setColorResToDrawable(R.color.app_gray, viewConfigBinding.viewConfigIbDayMode.drawable)
-            UiUtil.setColorIntToDrawable(
-                config.currentThemeColor,
-                viewConfigBinding.viewConfigIbNightMode.drawable
-            )
+            viewConfigIbDayMode.isSelected = false
+            viewConfigIbNightMode.isSelected = true
+
             setToolBarColor()
             setAudioPlayerBackground()
             dialog?.hide()
         }
 
         if (activityCallback.direction == Config.Direction.HORIZONTAL) {
-            viewConfigBinding.buttonHorizontal.isSelected = true
+            buttonHorizontal.isSelected = true
         } else if (activityCallback.direction == Config.Direction.VERTICAL) {
-            viewConfigBinding.buttonVertical.isSelected = true
+            buttonVertical.isSelected = true
         }
 
-        viewConfigBinding.buttonVertical.setOnClickListener {
+        buttonVertical.setOnClickListener {
             config = AppUtil.getSavedConfig(context)!!
             config.direction = Config.Direction.VERTICAL
             AppUtil.saveConfig(context, config)
             activityCallback.onDirectionChange(Config.Direction.VERTICAL)
-            viewConfigBinding.buttonHorizontal.isSelected = false
-            viewConfigBinding.buttonVertical.isSelected = true
+            buttonHorizontal.isSelected = false
+            buttonVertical.isSelected = true
         }
 
-        viewConfigBinding.buttonHorizontal.setOnClickListener {
+        buttonHorizontal.setOnClickListener {
             config = AppUtil.getSavedConfig(context)!!
             config.direction = Config.Direction.HORIZONTAL
             AppUtil.saveConfig(context, config)
             activityCallback.onDirectionChange(Config.Direction.HORIZONTAL)
-            viewConfigBinding.buttonHorizontal.isSelected = true
-            viewConfigBinding.buttonVertical.isSelected = false
+            buttonHorizontal.isSelected = true
+            buttonVertical.isSelected = false
         }
     }
 
-    private fun configFonts() {
+    private var fontChangedArabic = false
+    private var fontChangedLatin = false
 
+    @SuppressLint("ResourceAsColor")
+    private fun configLatinFonts(){
         val colorStateList = UiUtil.getColorList(
             config.currentThemeColor,
             ContextCompat.getColor(context!!, R.color.grey_color)
         )
 
-        viewConfigBinding.buttonVertical.setTextColor(colorStateList)
-        viewConfigBinding.buttonHorizontal.setTextColor(colorStateList)
+        buttonVertical.setTextColor(colorStateList)
+        buttonHorizontal.setTextColor(colorStateList)
 
-        val adapter = FontAdapter(config, context!!)
+        val adapter = FontLatinAdapter(context!!,config)
 
-        viewConfigBinding.viewConfigFontSpinner.adapter = adapter
-        val color:Int
-        color = if (config.isNightMode) {
-            R.color.night_default_font_color
-        } else {
-            R.color.day_default_font_color
-        }
-        //,
+        viewConfigFontLatinSpinner.adapter = adapter
 
-        viewConfigBinding.viewConfigFontSpinner.background.setColorFilter(
-            PorterDuffColorFilter(getResources().getColor(color), PorterDuff.Mode.SRC_ATOP)
+        viewConfigFontLatinSpinner.background.setColorFilter(
+            if (config.isNightMode) {
+                R.color.night_default_font_color
+            } else {
+                R.color.day_default_font_color
+            },
+            PorterDuff.Mode.SRC_ATOP
         )
 
-        val fontIndex = adapter.fontKeyList.indexOf(config.font)
-        viewConfigBinding.viewConfigFontSpinner.setSelection(if (fontIndex < 0) 0 else fontIndex)
+        val fontIndex = adapter.fontLatinKeyList.indexOf(config.fontLatin)
+        println("configLatinFonts fontIndex:$fontIndex " )
 
-        viewConfigBinding.viewConfigFontSpinner.onItemSelectedListener =
-            object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long
-                ) {
-                    selectFont(adapter.fontKeyList[position], true)
-                }
+        viewConfigFontLatinSpinner.setSelection(if (fontIndex < 0) 0 else fontIndex)
 
-                override fun onNothingSelected(parent: AdapterView<*>?) {
-                }
+        viewConfigFontLatinSpinner.onItemSelectedListener=object:AdapterView.OnItemSelectedListener{
+            override fun onItemSelected(p0: AdapterView<*>?, p1: View?, position: Int, id: Long) {
+                val selectedFont = adapter.fontLatinKeyList[position]
+                selectFontLatin(selectedFont)
+                fontChangedLatin = true
             }
+
+            override fun onNothingSelected(p0: AdapterView<*>?) {
+
+            }
+        }
     }
 
-    private fun selectFont(selectedFont: String, isReloadNeeded: Boolean) {
+    private fun selectFontLatin(selectedFont: String){
+        config.fontLatin = selectedFont
+        AppUtil.saveConfig(activity,config)
 
-        config.font = selectedFont
-
-        if (isAdded && isReloadNeeded) {
-            AppUtil.saveConfig(activity, config)
+        // Trigger reload  untuk mengganti font di epub
+        if (fontChangedLatin){
             EventBus.getDefault().post(ReloadDataEvent())
+
+            fontChangedLatin = false // Reset the flag
         }
     }
 
@@ -239,7 +269,7 @@ class ConfigBottomSheetDialogFragment : BottomSheetDialogFragment() {
 
         colorAnimation.addUpdateListener { animator ->
             val value = animator.animatedValue as Int
-            viewConfigBinding.container.setBackgroundColor(value)
+            container.setBackgroundColor(value)
         }
 
         colorAnimation.addListener(object : Animator.AnimatorListener {
@@ -287,27 +317,47 @@ class ConfigBottomSheetDialogFragment : BottomSheetDialogFragment() {
         colorAnimation.start()
     }
 
-    private fun configSeekBar() {
-        val thumbDrawable = ContextCompat.getDrawable(activity!!, R.drawable.seekbar_thumb)
-        UiUtil.setColorIntToDrawable(config.currentThemeColor, thumbDrawable)
-        UiUtil.setColorResToDrawable(
-            R.color.grey_color,
-            viewConfigBinding.viewConfigFontSizeSeekBar.progressDrawable
-        )
-        viewConfigBinding.viewConfigFontSizeSeekBar.thumb = thumbDrawable
+    private var debounceFuture: ScheduledFuture<*>? = null
+    private val debounceExecutor = Executors.newSingleThreadScheduledExecutor()
 
-        viewConfigBinding.viewConfigFontSizeSeekBar.setOnSeekBarChangeListener(object :
-            SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                config.fontSize = progress
-                AppUtil.saveConfig(activity, config)
-                EventBus.getDefault().post(ReloadDataEvent())
+    private fun configFontSizeButtons() {
+        viewConfigFontSizeBtnDecrease.setOnClickListener {
+            if (config.fontSize > 1) {
+                config.fontSize -= 1
+                viewConfigFontSize.text = config.fontSize.toString()
+
+                debounce {
+                    AppUtil.saveConfig(activity, config)
+                    EventBus.getDefault().post(ReloadDataEvent())
+                }
             }
+        }
 
-            override fun onStartTrackingTouch(seekBar: SeekBar) {}
+        viewConfigFontSizeBtnIncrease.setOnClickListener {
+            if (config.fontSize < 10) {
+                config.fontSize += 1
+                viewConfigFontSize.text = config.fontSize.toString()
 
-            override fun onStopTrackingTouch(seekBar: SeekBar) {}
-        })
+                debounce {
+                    AppUtil.saveConfig(activity, config)
+                    EventBus.getDefault().post(ReloadDataEvent())
+                    print("DEBOUNCE EXECUTEDD!!")
+                }
+            }
+        }
+    }
+
+    fun debounce(
+        delayMillis: Long = 300,
+        action: () -> Unit
+    ) {
+        // Cancel any previous debounce task
+        debounceFuture?.cancel(false)
+
+        // Schedule a new debounce task
+        debounceFuture = debounceExecutor.schedule({
+            action()
+        }, delayMillis, TimeUnit.MILLISECONDS)
     }
 
     private fun setToolBarColor() {

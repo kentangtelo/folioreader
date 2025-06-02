@@ -91,7 +91,8 @@ class AppUtil {
         fun saveConfig(context: Context?, config: Config) {
             val obj = JSONObject()
             try {
-                obj.put(Config.CONFIG_FONT, config.font)
+                obj.put(Config.CONFIG_FONT_ARABIC, config.fontArabic)
+                obj.put(Config.CONFIG_FONT_LATIN, config.fontLatin)
                 obj.put(Config.CONFIG_FONT_SIZE, config.fontSize)
                 obj.put(Config.CONFIG_IS_NIGHT_MODE, config.isNightMode)
                 obj.put(Config.CONFIG_THEME_COLOR_INT, config.themeColor)

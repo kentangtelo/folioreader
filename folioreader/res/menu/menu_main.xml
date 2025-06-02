@@ -21,7 +21,7 @@
 
     <item
         android:id="@+id/itemConfig"
-        android:icon="@drawable/icon_font"
+        android:icon="@drawable/baseline_settings_24"
         android:title="@string/menu_item_config"
 
         app:showAsAction="ifRoom"

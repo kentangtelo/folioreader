@@ -59,32 +59,53 @@ public final class HtmlUtil {
         jsPath = jsPath
                 + "<meta name=\"viewport\" content=\"height=device-height, user-scalable=no\" />";
 
-        String fontName = config.getFont();
+        String fontNameArabic = config.getFontArabic();
+        String fontNameLatin = config.getFontLatin();
 
-        System.out.println("Font family: " + fontName);
+        System.out.println("Font family arabic: " + fontNameArabic);
+        System.out.println("Font family latin: " + fontNameLatin);
 
         // Inject CSS & user font style
         String toInject = "\n" + cssPath + "\n" + jsPath + "\n";
 
-        File userFontFile = FontFinder.getFontFile(fontName);
-        if (userFontFile != null) {
+        File arabicFontFile = FontFinder.getFontFile(fontNameArabic, context);
+        File latinFontFile = FontFinder.getFontFile(fontNameLatin, context);
+//        if (arabicFontFile != null) {
+//            System.out.println("Injected user font into CSS");
+//            System.out.println("  - path latin: " + arabicFontFile.getAbsolutePath());
+//            System.out.println("  - family latin: '" + fontNameArabic + "'");
+//            toInject += "<style>\n";
+//            toInject += "@font-face {\n";
+//            toInject += "  font-family: '" + fontNameArabic + "';\n";
+//            toInject += "  src: url('file://" + arabicFontFile.getAbsolutePath() + "');\n";
+//            toInject += "}\n";
+//            toInject += ".custom-font, .custom-font p, .custom-font div, .custom-font span, .custom-font h1, .custom-font strong {\n";
+//            toInject += "  font-family: '" + fontNameArabic + "', sans-serif;\n";
+//            toInject += "}\n";
+//            toInject += "\n</style>";
+//        }
+
+        if (latinFontFile != null) {
             System.out.println("Injected user font into CSS");
-            System.out.println("  - path: " + userFontFile.getAbsolutePath());
-            System.out.println("  - family: '" + fontName + "'");
+            System.out.println("  - path latin: " + latinFontFile.getAbsolutePath());
+            System.out.println("  - family latin: '" + fontNameLatin + "'");
             toInject += "<style>\n";
             toInject += "@font-face {\n";
-            toInject += "  font-family: '" + fontName + "';\n";
-            toInject += "  src: url('file://" + userFontFile.getAbsolutePath() + "');\n";
+            toInject += "  font-family: '" + fontNameLatin + "';\n";
+            toInject += "  src: url('file://" + latinFontFile.getAbsolutePath() + "');\n";
             toInject += "}\n";
             toInject += ".custom-font, .custom-font p, .custom-font div, .custom-font span, .custom-font h1, .custom-font strong {\n";
-            toInject += "  font-family: '" + fontName + "', sans-serif;\n";
+            toInject += "  font-family: '" + fontNameLatin + "', sans-serif;\n";
             toInject += "}\n";
             toInject += "\n</style>";
         }
 
+
         toInject += "</head>";
 
         htmlContent = htmlContent.replace("</head>", toInject);
+
+//        System.out.println("HTML CONTENT FIRST" + htmlContent);
 
         String classes = "custom-font";
 
@@ -93,31 +114,50 @@ public final class HtmlUtil {
         }
 
         switch (config.getFontSize()) {
-            case 0:
+            case 1:
                 classes += " textSizeOne";
                 break;
-            case 1:
+            case 2:
                 classes += " textSizeTwo";
                 break;
-            case 2:
+            case 3:
                 classes += " textSizeThree";
                 break;
-            case 3:
+            case 4:
                 classes += " textSizeFour";
                 break;
-            case 4:
+            case 5:
                 classes += " textSizeFive";
+                break;
+            case 6:
+                classes += " textSizeSix";
+                break;
+            case 7:
+                classes += " textSizeSeven";
+                break;
+            case 8:
+                classes += " textSizeEight";
+                break;
+            case 9:
+                classes += " textSizeNine";
+                break;
+            case 10:
+                classes += " textSizeTen";
                 break;
             default:
                 break;
         }
 
-        String styles = "font-family: '" + fontName + "';";
+//        String styles = "font-family: '" + fontNameArabic + "';";
+        String styles = "font-family: '" + fontNameLatin + "';";
 
         htmlContent = htmlContent.replace("<html",
                 "<html class=\"" + classes + "\"" +
                         " style=\"" + styles + "\"" +
                         " onclick=\"onClickHtml()\"");
+
+//        System.out.println("HTML CONTENT SECOND" + htmlContent);
+
         return htmlContent;
     }
 }

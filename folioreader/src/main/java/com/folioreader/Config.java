@@ -21,7 +21,8 @@ public class Config implements Parcelable {
     private static final String LOG_TAG = Config.class.getSimpleName();
     public static final String INTENT_CONFIG = "config";
     public static final String EXTRA_OVERRIDE_CONFIG = "com.folioreader.extra.OVERRIDE_CONFIG";
-    public static final String CONFIG_FONT = "font";
+    public static final String CONFIG_FONT_LATIN = "font_latin";
+    public static final String CONFIG_FONT_ARABIC = "font_arabic";
     public static final String CONFIG_FONT_SIZE = "font_size";
     public static final String CONFIG_IS_NIGHT_MODE = "is_night_mode";
     public static final String CONFIG_THEME_COLOR_INT = "theme_color_int";
@@ -36,7 +37,9 @@ public class Config implements Parcelable {
     private static final int DEFAULT_THEME_COLOR_INT =
             ContextCompat.getColor(AppContext.get(), R.color.default_theme_accent_color);
 
-    private String font = "Roboto";
+    private String fontLatin = "Roboto";
+
+    private String fontArabic = "الخط العربي البسيط";
     private int fontSize = 2;
     private boolean nightMode;
     @ColorInt
@@ -82,7 +85,8 @@ public class Config implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         Bundle bundle = new Bundle();
-        bundle.putString(CONFIG_FONT, font);
+        bundle.putString(CONFIG_FONT_LATIN, fontLatin);
+        bundle.putString(CONFIG_FONT_ARABIC, fontArabic);
         bundle.putInt(CONFIG_FONT_SIZE, fontSize);
         bundle.putBoolean(CONFIG_IS_NIGHT_MODE, nightMode);
         bundle.putInt(CONFIG_THEME_COLOR_INT, themeColor);
@@ -103,7 +107,8 @@ public class Config implements Parcelable {
                 Log.i("Parse Error", "Bundle does not exist, using default configuration.");
                 setDefaults();
             } else {
-                font = getBundleItem(bundle, CONFIG_FONT, "Roboto");
+                fontLatin = getBundleItem(bundle, CONFIG_FONT_LATIN, "Roboto");
+                fontArabic = getBundleItem(bundle, CONFIG_FONT_ARABIC, "الخط العربي البسيط");
                 fontSize = getBundleItem(bundle, CONFIG_FONT_SIZE, 2);
                 nightMode = getBundleItem(bundle, CONFIG_IS_NIGHT_MODE, false);
                 themeColor = getBundleItem(bundle, CONFIG_THEME_COLOR_INT, DEFAULT_THEME_COLOR_INT);
@@ -127,7 +132,8 @@ public class Config implements Parcelable {
     }
 
     private void setDefaults() {
-        font = "Roboto";
+        fontLatin = "Roboto";
+        fontArabic = "الخط العربي البسيط";
         fontSize = 2;
         nightMode = false;
         themeColor = DEFAULT_THEME_COLOR_INT;
@@ -152,7 +158,8 @@ public class Config implements Parcelable {
 
     public Config(JSONObject obj) {
         try {
-            font = getJsonItem(obj, CONFIG_FONT, "Roboto");
+            fontLatin = getJsonItem(obj, CONFIG_FONT_LATIN, "Roboto");
+            fontArabic = getJsonItem(obj, CONFIG_FONT_ARABIC, "الخط العربي البسيط");
         } catch(Exception e) {
             Log.i("Parse Error", "Bundle does not exist, using default configuration.");
         }
@@ -213,12 +220,20 @@ public class Config implements Parcelable {
         }
     }
 
-    public String getFont() {
-        return font;
+    public String getFontLatin() {
+        return fontLatin;
     }
 
-    public Config setFont(String font) {
-        this.font = font;
+    public Config setFontLatin(String fontLatin) {
+        this.fontLatin = fontLatin;
+        return this;
+    }
+    public String getFontArabic() {
+        return fontArabic;
+    }
+
+    public Config setFontArabic(String fontArabic) {
+        this.fontArabic = fontArabic;
         return this;
     }
 
@@ -409,7 +424,8 @@ public class Config implements Parcelable {
     @Override
     public String toString() {
         return "Config{" +
-                "font=" + font +
+                "fontLatin=" + fontLatin +
+                ", fontArabic=" + fontArabic +
                 ", fontSize=" + fontSize +
                 ", nightMode=" + nightMode +
                 ", themeColor=" + themeColor +

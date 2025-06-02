@@ -21,7 +21,7 @@
             android:layout_marginTop="12dp"
             android:background="@drawable/note_edittext_background"
             android:gravity="start"
-            android:hint="Nama Bookmark"
+            android:hint="Nama bookmark"
             android:inputType="textMultiLine"
             android:lines="1"
             android:padding="10dp"
