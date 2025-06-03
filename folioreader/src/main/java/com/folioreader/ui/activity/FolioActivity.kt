@@ -408,101 +408,109 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         try {
+            // Clear any existing menu items to avoid conflicts
+            menu.clear()
+            
             createdMenu = menu
             menuInflater.inflate(R.menu.menu_main, menu)
 
             val config = AppUtil.getSavedConfig(applicationContext)!!
-            UiUtil.setColorIntToDrawable(
-                config.currentThemeColor,
-                menu.findItem(R.id.itemBookmark).icon
-            )
-            UiUtil.setColorIntToDrawable(
-                config.currentThemeColor,
-                menu.findItem(R.id.itemSearch).icon
-            )
-            UiUtil.setColorIntToDrawable(
-                config.currentThemeColor,
-                menu.findItem(R.id.itemConfig).icon
-            )
-            UiUtil.setColorIntToDrawable(config.currentThemeColor, menu.findItem(R.id.itemTts).icon)
-
-            if (!config.isShowTts)
-                menu.findItem(R.id.itemTts).isVisible = false
+            
+            // Add null checks for menu items to prevent crashes
+            menu.findItem(R.id.itemBookmark)?.let { item ->
+                UiUtil.setColorIntToDrawable(config.currentThemeColor, item.icon)
+            }
+            menu.findItem(R.id.itemSearch)?.let { item ->
+                UiUtil.setColorIntToDrawable(config.currentThemeColor, item.icon)
+            }
+            menu.findItem(R.id.itemConfig)?.let { item ->
+                UiUtil.setColorIntToDrawable(config.currentThemeColor, item.icon)
+            }
+            menu.findItem(R.id.itemTts)?.let { item ->
+                UiUtil.setColorIntToDrawable(config.currentThemeColor, item.icon)
+                if (!config.isShowTts)
+                    item.isVisible = false
+            }
         } catch (e: Exception) {
-            Log.e("FOLIOREADER", e.message.toString());
+            Log.e("FOLIOREADER", "Error creating options menu: ${e.message}", e);
+            // Return false to prevent menu creation if there's an error
+            return false
         }
 
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        //Log.d(LOG_TAG, "-> onOptionsItemSelected -> " + item.getItemId());
+        try {
+            //Log.d(LOG_TAG, "-> onOptionsItemSelected -> " + item.getItemId());
 
-        val itemId = item.itemId
+            val itemId = item.itemId
 
-        if (itemId == android.R.id.home) {
-            Log.v(LOG_TAG, "-> onOptionsItemSelected -> drawer")
-            startContentHighlightActivity()
-            return true
-        }
-        else if(itemId == R.id.itemBookmark){
-            val readLocator = currentFragment!!.getLastReadLocator()
-            Log.v(LOG_TAG, "-> onOptionsItemSelected 'if' -> bookmark")
-
-            bookmarkReadLocator = readLocator;
-            val localBroadcastManager = LocalBroadcastManager.getInstance(this)
-            val intent = Intent(FolioReader.ACTION_SAVE_READ_LOCATOR)
-            intent.putExtra(FolioReader.EXTRA_READ_LOCATOR, readLocator as Parcelable?)
-            localBroadcastManager.sendBroadcast(intent)
-            val dialog = Dialog(this, R.style.DialogCustomTheme)
-            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-            dialog.setContentView(R.layout.dialog_bookmark)
-            dialog.show()
-            dialog.setCanceledOnTouchOutside(true)
-            dialog.setOnCancelListener{
-                Toast.makeText(this,
-                    "please enter a Bookmark name and then press Save",
-                    Toast.LENGTH_SHORT).show()
+            if (itemId == android.R.id.home) {
+                Log.v(LOG_TAG, "-> onOptionsItemSelected -> drawer")
+                startContentHighlightActivity()
+                return true
             }
-            dialog.findViewById<View>(R.id.btn_save_bookmark).setOnClickListener {
-                val name = (dialog.findViewById<View>(R.id.bookmark_name) as EditText).text.toString()
-                if (!TextUtils.isEmpty(name)) {
-                    val simpleDateFormat = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
-                    val id =  BookmarkTable(this).insertBookmark(mBookId, simpleDateFormat.format(Date()), name, bookmarkReadLocator!!.toJson().toString());
+            else if(itemId == R.id.itemBookmark){
+                val readLocator = currentFragment!!.getLastReadLocator()
+                Log.v(LOG_TAG, "-> onOptionsItemSelected 'if' -> bookmark")
+
+                bookmarkReadLocator = readLocator;
+                val localBroadcastManager = LocalBroadcastManager.getInstance(this)
+                val intent = Intent(FolioReader.ACTION_SAVE_READ_LOCATOR)
+                intent.putExtra(FolioReader.EXTRA_READ_LOCATOR, readLocator as Parcelable?)
+                localBroadcastManager.sendBroadcast(intent)
+                val dialog = Dialog(this, R.style.DialogCustomTheme)
+                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+                dialog.setContentView(R.layout.dialog_bookmark)
+                dialog.show()
+                dialog.setCanceledOnTouchOutside(true)
+                dialog.setOnCancelListener{
                     Toast.makeText(this,
-                        getString(R.string.book_mark_success),
-                        Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this,
-                        "please Enter a Bookmark name and then press Save",
+                        "please enter a Bookmark name and then press Save",
                         Toast.LENGTH_SHORT).show()
                 }
-                dialog.dismiss()
-            }
-
-
-            return true
-        }
-        else if (itemId == R.id.itemSearch) {
-            Log.v(LOG_TAG, "-> onOptionsItemSelected -> " + item.title)
-            if (searchUri == null)
+                dialog.findViewById<View>(R.id.btn_save_bookmark).setOnClickListener {
+                    val name = (dialog.findViewById<View>(R.id.bookmark_name) as EditText).text.toString()
+                    if (!TextUtils.isEmpty(name)) {
+                        val simpleDateFormat = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
+                        val id =  BookmarkTable(this).insertBookmark(mBookId, simpleDateFormat.format(Date()), name, bookmarkReadLocator!!.toJson().toString());
+                        Toast.makeText(this,
+                            getString(R.string.book_mark_success),
+                            Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    } else {
+                        Toast.makeText(this,
+                            "please enter a Bookmark name and then press Save",
+                            Toast.LENGTH_SHORT).show()
+                    }
+                }
                 return true
-            val intent = Intent(this, SearchActivity::class.java)
-            intent.putExtra(SearchActivity.BUNDLE_SPINE_SIZE, spine?.size ?: 0)
-            intent.putExtra(SearchActivity.BUNDLE_SEARCH_URI, searchUri)
-            intent.putExtra(SearchAdapter.DATA_BUNDLE, searchAdapterDataBundle)
-            intent.putExtra(SearchActivity.BUNDLE_SAVE_SEARCH_QUERY, searchQuery)
-            startActivityForResult(intent, RequestCode.SEARCH.value)
-            return true
+            }
+            else if (itemId == R.id.itemSearch) {
+                Log.v(LOG_TAG, "-> onOptionsItemSelected -> search")
 
-        } else if (itemId == R.id.itemConfig) {
-            Log.v(LOG_TAG, "-> onOptionsItemSelected -> " + item.title)
-            showConfigBottomSheetDialogFragment()
-            return true
-
-        } else if (itemId == R.id.itemTts) {
-            Log.v(LOG_TAG, "-> onOptionsItemSelected -> " + item.title)
-            showMediaController()
+                val searchIntent = Intent(this, SearchActivity::class.java)
+                searchIntent.putExtra(SearchActivity.BUNDLE_SEARCH_URI, searchUri)
+                searchIntent.putExtra(SearchAdapter.DATA_BUNDLE, searchAdapterDataBundle)
+                searchIntent.putExtra(SearchActivity.BUNDLE_SAVE_SEARCH_QUERY, searchQuery)
+                startActivityForResult(searchIntent, RequestCode.SEARCH.value)
+                overridePendingTransition(R.anim.enter_from_right, R.anim.slide_in_left)
+                return true
+            }
+            else if (itemId == R.id.itemConfig) {
+                Log.v(LOG_TAG, "-> onOptionsItemSelected -> config")
+                showConfigBottomSheetDialogFragment()
+                return true
+            }
+            else if (itemId == R.id.itemTts) {
+                Log.v(LOG_TAG, "-> onOptionsItemSelected -> tts")
+                showMediaController()
+                return true
+            }
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Error handling menu item selection: ${e.message}", e)
+            // Return true to indicate we handled the item, even if there was an error
             return true
         }
 
@@ -1178,6 +1186,15 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
 
     override fun getDirection(): Config.Direction {
         return direction
+    }
+
+    // Add fallback method to handle goBackButtonClicked error from flutter_inappwebview conflict
+    @Suppress("unused") // This method is called via reflection from XML onClick
+    fun goBackButtonClicked(view: View) {
+        Log.v(LOG_TAG, "-> goBackButtonClicked - fallback method")
+        // This is a fallback method to prevent crashes when flutter_inappwebview
+        // tries to find this onClick handler. Just finish the activity.
+        onBackPressed()
     }
 
     private fun clearSearchLocator() {
