@@ -102,6 +102,7 @@
 
     <string name="menu_item_search">Cari</string>
     <string name="menu_item_config">Konfigurasi</string>
+    <string name="menu_item_bookmark">Markah</string>
     <string name="menu_item_tts">Text To Speech</string>
 
     <string name="search_hint">Cari di Buku</string>

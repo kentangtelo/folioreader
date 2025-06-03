@@ -412,7 +412,17 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
             menu.clear()
             
             createdMenu = menu
-            menuInflater.inflate(R.menu.menu_main, menu)
+            
+            // Try to inflate menu with better error handling
+            try {
+                menuInflater.inflate(R.menu.menu_main, menu)
+            } catch (inflateException: Exception) {
+                Log.e("FOLIOREADER", "Menu inflation failed, trying alternative approach: ${inflateException.message}")
+                
+                // If menu inflation fails, create menu items programmatically
+                createMenuItemsProgrammatically(menu)
+                return true
+            }
 
             val config = AppUtil.getSavedConfig(applicationContext)!!
             
@@ -433,11 +443,50 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
             }
         } catch (e: Exception) {
             Log.e("FOLIOREADER", "Error creating options menu: ${e.message}", e);
-            // Return false to prevent menu creation if there's an error
-            return false
+            // Create basic menu items to ensure functionality
+            createMenuItemsProgrammatically(menu)
+            return true
         }
 
         return true
+    }
+
+    private fun createMenuItemsProgrammatically(menu: Menu) {
+        Log.v(LOG_TAG, "-> createMenuItemsProgrammatically")
+        
+        try {
+            val config = AppUtil.getSavedConfig(applicationContext)!!
+            
+            // Create bookmark item
+            val bookmarkItem = menu.add(0, R.id.itemBookmark, 0, getString(R.string.menu_item_bookmark))
+            bookmarkItem.setIcon(R.drawable.ic_baseline_bookmark_border_24)
+            bookmarkItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+            UiUtil.setColorIntToDrawable(config.currentThemeColor, bookmarkItem.icon)
+            
+            // Create config item
+            val configItem = menu.add(0, R.id.itemConfig, 1, getString(R.string.menu_item_config))
+            configItem.setIcon(R.drawable.baseline_settings_24)
+            configItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+            UiUtil.setColorIntToDrawable(config.currentThemeColor, configItem.icon)
+            
+            // Create search item (initially hidden)
+            val searchItem = menu.add(0, R.id.itemSearch, 2, getString(R.string.menu_item_search))
+            searchItem.setIcon(R.drawable.ic_search)
+            searchItem.setVisible(false)
+            searchItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+            UiUtil.setColorIntToDrawable(config.currentThemeColor, searchItem.icon)
+            
+            // Create TTS item (conditionally)
+            if (config.isShowTts) {
+                val ttsItem = menu.add(0, R.id.itemTts, 3, getString(R.string.menu_item_tts))
+                ttsItem.setIcon(R.drawable.man_speech_icon)
+                ttsItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+                UiUtil.setColorIntToDrawable(config.currentThemeColor, ttsItem.icon)
+            }
+            
+        } catch (e: Exception) {
+            Log.e("FOLIOREADER", "Error creating menu programmatically: ${e.message}", e)
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -1190,8 +1239,16 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
 
     // Add fallback method to handle goBackButtonClicked error from flutter_inappwebview conflict
     @Suppress("unused") // This method is called via reflection from XML onClick
+    fun goBackButtonClicked(item: MenuItem) {
+        Log.v(LOG_TAG, "-> goBackButtonClicked - fallback method for MenuItem")
+        // This is a fallback method to prevent crashes when flutter_inappwebview
+        // tries to find this onClick handler. Just finish the activity.
+        onBackPressed()
+    }
+
+    @Suppress("unused") // This method is called via reflection from XML onClick  
     fun goBackButtonClicked(view: View) {
-        Log.v(LOG_TAG, "-> goBackButtonClicked - fallback method")
+        Log.v(LOG_TAG, "-> goBackButtonClicked - fallback method for View")
         // This is a fallback method to prevent crashes when flutter_inappwebview
         // tries to find this onClick handler. Just finish the activity.
         onBackPressed()
