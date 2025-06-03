@@ -413,38 +413,14 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
             
             createdMenu = menu
             
-            // Try to inflate menu with better error handling
-            try {
-                menuInflater.inflate(R.menu.menu_main, menu)
-            } catch (inflateException: Exception) {
-                Log.e("FOLIOREADER", "Menu inflation failed, trying alternative approach: ${inflateException.message}")
-                
-                // If menu inflation fails, create menu items programmatically
-                createMenuItemsProgrammatically(menu)
-                return true
-            }
-
-            val config = AppUtil.getSavedConfig(applicationContext)!!
+            // Due to flutter_inappwebview conflicts with menu inflation,
+            // we'll create menus programmatically to avoid onClick handler issues
+            Log.v(LOG_TAG, "Creating menu programmatically to avoid flutter_inappwebview conflicts")
+            createMenuItemsProgrammatically(menu)
             
-            // Add null checks for menu items to prevent crashes
-            menu.findItem(R.id.itemBookmark)?.let { item ->
-                UiUtil.setColorIntToDrawable(config.currentThemeColor, item.icon)
-            }
-            menu.findItem(R.id.itemSearch)?.let { item ->
-                UiUtil.setColorIntToDrawable(config.currentThemeColor, item.icon)
-            }
-            menu.findItem(R.id.itemConfig)?.let { item ->
-                UiUtil.setColorIntToDrawable(config.currentThemeColor, item.icon)
-            }
-            menu.findItem(R.id.itemTts)?.let { item ->
-                UiUtil.setColorIntToDrawable(config.currentThemeColor, item.icon)
-                if (!config.isShowTts)
-                    item.isVisible = false
-            }
         } catch (e: Exception) {
             Log.e("FOLIOREADER", "Error creating options menu: ${e.message}", e);
-            // Create basic menu items to ensure functionality
-            createMenuItemsProgrammatically(menu)
+            // Even if programmatic creation fails, return true to prevent crash
             return true
         }
 
