@@ -368,10 +368,18 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
 
         // Update toolbar colors
         createdMenu?.let { m ->
-            UiUtil.setColorIntToDrawable(config.themeColor, m.findItem(R.id.itemBookmark).icon)
-            UiUtil.setColorIntToDrawable(config.themeColor, m.findItem(R.id.itemSearch).icon)
-            UiUtil.setColorIntToDrawable(config.themeColor, m.findItem(R.id.itemConfig).icon)
-            UiUtil.setColorIntToDrawable(config.themeColor, m.findItem(R.id.itemTts).icon)
+            m.findItem(R.id.itemBookmark)?.icon?.let { icon ->
+                UiUtil.setColorIntToDrawable(config.themeColor, icon)
+            }
+            m.findItem(R.id.itemSearch)?.icon?.let { icon ->
+                UiUtil.setColorIntToDrawable(config.themeColor, icon)
+            }
+            m.findItem(R.id.itemConfig)?.icon?.let { icon ->
+                UiUtil.setColorIntToDrawable(config.themeColor, icon)
+            }
+            m.findItem(R.id.itemTts)?.icon?.let { icon ->
+                UiUtil.setColorIntToDrawable(config.themeColor, icon)
+            }
         }
     }
 
@@ -393,10 +401,18 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
 
         // Update toolbar colors
         createdMenu?.let { m ->
-            UiUtil.setColorIntToDrawable(config.nightThemeColor, m.findItem(R.id.itemBookmark).icon)
-            UiUtil.setColorIntToDrawable(config.nightThemeColor, m.findItem(R.id.itemSearch).icon)
-            UiUtil.setColorIntToDrawable(config.nightThemeColor, m.findItem(R.id.itemConfig).icon)
-            UiUtil.setColorIntToDrawable(config.nightThemeColor, m.findItem(R.id.itemTts).icon)
+            m.findItem(R.id.itemBookmark)?.icon?.let { icon ->
+                UiUtil.setColorIntToDrawable(config.nightThemeColor, icon)
+            }
+            m.findItem(R.id.itemSearch)?.icon?.let { icon ->
+                UiUtil.setColorIntToDrawable(config.nightThemeColor, icon)
+            }
+            m.findItem(R.id.itemConfig)?.icon?.let { icon ->
+                UiUtil.setColorIntToDrawable(config.nightThemeColor, icon)
+            }
+            m.findItem(R.id.itemTts)?.icon?.let { icon ->
+                UiUtil.setColorIntToDrawable(config.nightThemeColor, icon)
+            }
         }
     }
 
