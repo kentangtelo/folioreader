@@ -24,11 +24,22 @@
 -keep class com.folioreader.** { *; }
 -keepclassmembers class com.folioreader.** { *; }
 
-# Prevent obfuscation of menu onClick handlers
+# Prevent obfuscation of menu onClick handlers and Activity methods
 -keepclassmembers class com.folioreader.ui.activity.FolioActivity {
     public void *(android.view.View);
+    public void *(android.view.MenuItem);
     public boolean onOptionsItemSelected(android.view.MenuItem);
     public boolean onCreateOptionsMenu(android.view.Menu);
+    public void goBackButtonClicked(...);
+    private void createMenuItemsProgrammatically(android.view.Menu);
+}
+
+-keepclassmembers class com.folioreader.ui.activity.SearchActivity {
+    public void *(android.view.View);
+    public void *(android.view.MenuItem);
+    public boolean onOptionsItemSelected(android.view.MenuItem);
+    public boolean onCreateOptionsMenu(android.view.Menu);
+    private void createSearchMenuProgrammatically(android.view.Menu);
 }
 
 # Keep WebView related classes
@@ -40,10 +51,17 @@
 -keep class com.pichillilorenzo.flutter_inappwebview.** { *; }
 -dontwarn com.pichillilorenzo.flutter_inappwebview.**
 
-# Keep menu item onClick methods
--keepclassmembers class * {
+# Keep all menu-related classes and methods to prevent reflection issues
+-keep class android.view.Menu { *; }
+-keep class android.view.MenuItem { *; }
+-keep class androidx.appcompat.view.menu.** { *; }
+
+# Keep menu item onClick methods for all activities
+-keepclassmembers class * extends android.app.Activity {
     public void *ButtonClicked(android.view.View);
+    public void *ButtonClicked(android.view.MenuItem);
     public void goBackButtonClicked(android.view.View);
+    public void goBackButtonClicked(android.view.MenuItem);
 }
 
 # Keep activity context and prevent null pointer exceptions
@@ -51,4 +69,20 @@
     public void onCreate(android.os.Bundle);
     public boolean onCreateOptionsMenu(android.view.Menu);
     public boolean onOptionsItemSelected(android.view.MenuItem);
-} 
+}
+
+# Keep Fragment classes that might have menu interactions
+-keep class * extends androidx.fragment.app.Fragment {
+    public void *(android.view.View);
+    public void *(android.view.MenuItem);
+}
+
+# Prevent issues with Kotlin coroutines and reflection
+-dontwarn kotlinx.coroutines.**
+-keep class kotlinx.coroutines.** { *; }
+
+# Keep annotation classes
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod 

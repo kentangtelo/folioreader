@@ -10,6 +10,7 @@ import android.os.Parcelable
 import android.text.TextUtils
 import android.util.Log
 import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.ImageButton
 import androidx.appcompat.app.ActionBar
@@ -235,7 +236,21 @@ class SearchActivity : AppCompatActivity(), OnItemClickListener {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         Log.v(LOG_TAG, "-> onCreateOptionsMenu")
-        menuInflater.inflate(R.menu.menu_search, menu!!)
+        
+        try {
+            // Clear any existing menu items to avoid conflicts
+            menu?.clear()
+            
+            // Due to flutter_inappwebview conflicts with menu inflation,
+            // we'll create menus programmatically to avoid onClick handler issues
+            Log.v(LOG_TAG, "Creating search menu programmatically to avoid flutter_inappwebview conflicts")
+            createSearchMenuProgrammatically(menu!!)
+            
+        } catch (e: Exception) {
+            Log.e("FOLIOREADER", "Error creating search options menu: ${e.message}", e);
+            // Even if programmatic creation fails, return true to prevent crash
+            return true
+        }
 
         val config: Config = AppUtil.getSavedConfig(applicationContext)!!
 //        val itemSearch: MenuItem = menu.findItem(R.id.itemSearch)
@@ -306,6 +321,26 @@ class SearchActivity : AppCompatActivity(), OnItemClickListener {
         return true
     }
 
+    private fun createSearchMenuProgrammatically(menu: Menu) {
+        Log.v(LOG_TAG, "-> createSearchMenuProgrammatically")
+        
+        try {
+            val config = AppUtil.getSavedConfig(applicationContext)!!
+            
+            // Create search item with custom action view
+            val searchItem = menu.add(0, R.id.itemSearch, 0, getString(R.string.menu_item_search))
+            searchItem.setIcon(R.drawable.ic_search)
+            searchItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS or MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW)
+            searchItem.setVisible(false) // Initially hidden as per original menu
+            UiUtil.setColorIntToDrawable(config.currentThemeColor, searchItem.icon)
+            
+            // Set the search view as action view
+            // Note: The searchView will be initialized in the main onCreateOptionsMenu method
+            
+        } catch (e: Exception) {
+            Log.e("FOLIOREADER", "Error creating search menu programmatically: ${e.message}", e)
+        }
+    }
 
     override fun onItemClick(
         adapter: RecyclerView.Adapter<RecyclerView.ViewHolder>,
